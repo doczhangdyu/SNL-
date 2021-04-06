@@ -1,0 +1,36 @@
+program main
+	type aaa=integer;
+		 bbb=sagvs;
+		 vvv=gdg;
+		 sss=array [1..100] of char;
+		 mmm=record 
+					integer qqq,cxcx;
+					char lll,wewe;
+					array [2..10] of integer kjkj,uyuy;
+			 end;
+	var integer v1;
+		integer v2;
+		char c;
+		mmm o;
+		sss p;
+		sss iii;
+	procedure f(vvv a;aaa vc;char tytyyt) ;
+	begin
+		v1 := 2 ;
+		v2 := 3 ;
+		if 5+5*(5+1) < 55 then
+			return(5)
+		else
+			write(2+2)
+		fi;
+		while v2=0 do
+			write(5+66666)
+		endwh;
+		read(v2);
+		aa:=sss[6];
+		vvvcc:=o.qqq
+	end
+	begin
+		f();
+		write(2+2)
+end

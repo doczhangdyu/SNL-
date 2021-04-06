@@ -1,0 +1,104 @@
+ProgramHead DeclarePart ProgramBody #
+program ProgramName #
+ID #
+TypeDecpart  VarDecpart  ProcDecPart #
+#
+TypeDec #
+type TypeDecList #
+TypeId = TypeDef ; TypeDecMore #
+#
+TypeDecList #
+ID #
+BaseType #
+StructureType #
+ID #
+integer #
+char #
+ArrayType #
+RecType #
+array [ Low .. Top ] of BaseType #
+INTC #
+INTC #
+record  FieldDecList  end #
+BaseType  IdList ; FieldDecMore #
+ArrayType IdList ; FieldDecMore #
+#
+FieldDecList #
+ID  IdMore #
+#
+, IdList #
+#
+VarDec #
+var  VarDecList #
+TypeDef  VarIdList ;  VarDecMore #
+#
+VarDecList #
+ID   VarIdMore #
+#
+, VarIdList #
+#
+ProcDec #
+procedure ProcName ( ParamList )  ; ProcDecParts ProcBody ProcDecMore #
+#
+ProcDec #
+ID #
+#
+ParamDecList #
+Param  ParamMore #
+#
+; ParamDecList #
+TypeDef  FormList #
+var TypeDef  FormList #
+ID  FidMore #
+#
+, FormList #
+DeclarePart #
+ProgramBody #
+begin  StmList end #
+Stm  StmMore #
+#
+;  StmList #
+ConditionalStm #
+LoopStm #
+InputStm #
+OutputStm #
+ReturnStm #
+ID AssCall #
+AssignmentRest #
+CallStmRest #
+VariMore := Exp #
+if RelExp then  StmList else StmList  fi #
+while  RelExp do StmList  endwh #
+read ( Invar ) #
+ID #
+write ( Exp ) #
+return ( Exp ) #
+( ActParamList ) #
+#
+Exp  ActParamMore #
+#
+,  ActParamList #
+Exp   OtherRelE #
+CmpOp   Exp #
+Term  OtherTerm #
+#
+AddOp   Exp #
+Factor   OtherFactor #
+#
+MultOp  Term #
+(  Exp  ) #
+INTC #
+Variable #
+ID    VariMore #
+#
+[ Exp ] #
+.  FieldVar #
+ID    FieldVarMore #
+#
+[ Exp  ] #
+< #
+= #
++ #
+- #
+* #
+/ #
