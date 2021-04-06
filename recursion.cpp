@@ -12,7 +12,11 @@ struct Token
 	int    isInterger;
 	Token* next;
 };
-
+struct grammer_tree{
+	int value;//vaule
+	grammer_tree* next;
+	grammer_tree* child;
+};
 
 class Recursion_analysis
 {
@@ -24,6 +28,79 @@ public:
 
     }
 	~Recursion_analysis(){}
+
+
+	/* 关于语法树结点的相关操作 */
+	void print_tree(grammer_tree* root,int deep)
+	{
+		grammer_tree* S_queue[100];
+		int tail=0;
+		int head = -1;
+		while(root!=NULL)
+		{
+			S_queue[tail++]=root;
+			root=root->next;
+		}
+		while(tail - head - 1!=0 && tail != 0)
+		{
+			for (int i = 0; i < deep; ++i)
+			{
+				if (i==deep-1)
+				{
+					printf("|--");
+				}
+				else
+					printf("|   ");
+			}
+			int value = S_queue[head + 1]->value;
+			printf("%s\n",decode(S_queue[head+1]->value).c_str() );
+			head ++;
+			print_tree(S_queue[head]->child,deep+1);
+		}
+	}
+		/*void print_tree(grammer_tree* root,int deep)
+	{
+		// while(root!=NULL)
+		// {
+		// 	for (int i = 0; i < deep; ++i)
+		// 	{
+		// 		printf("-");
+		// 	}
+		// 	printf("%s\n",decode(root->value).c_str() );
+		// 	root=root->next;
+		// }
+		grammer_tree* S_stack[100];
+		int S_top=0;
+		while(root!=NULL)
+		{
+			S_stack[S_top++]=root;
+			root=root->next;
+		}
+		int max = S_top;
+		while(S_top!=0)
+		{
+			for (int i = 0; i < deep; ++i)
+			{
+				if (i==deep-1)
+				{
+					printf("|--");
+				}
+				else
+					printf("|   ");
+			}
+			printf("%s\n",decode(S_stack[S_top-1]->value).c_str() );
+			print_tree(S_stack[--S_top]->child,deep+1);
+		}
+	}*/
+
+	grammer_tree* newNode(int code)
+	{
+		grammer_tree* node = new grammer_tree;
+		node->value = code;
+		node->next = NULL;
+		node->child = NULL;
+		return node;
+	}
 
 
     int ReadCH(void)
@@ -241,7 +318,11 @@ public:
 
     int encode(string tempName)
 	{
-		if (tempName=="ID")
+		if(tempName == "error")
+		{
+			return 155;
+		}
+		else if (tempName=="ID")
 		{
 			return 102;
 		}
@@ -720,6 +801,7 @@ public:
 			case 138: return "..";
 			case 139: return "of";
 			case 140: return "'";
+			case 155: return "error";
 			case 1: return "Program";
 			case 2: return "ProgramHead";
 			case 3: return "ProgramName";
@@ -975,809 +1057,1561 @@ public:
 		rdToken();
 	}
     //对应编码1
-    void aProgram()
+    grammer_tree* aProgram()
     {
+		grammer_tree* root = newNode(1);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == 101)
 		{
-			aProgramHead();
-			aDeclarePart();
-			aProgramBody();
+			nowNode->child = aProgramHead();
+			nowNode = nowNode->child;
+			nowNode->next = aDeclarePart();
+			nowNode = nowNode->next;
+			nowNode->next = aProgramBody();
 		}
 		else 
 		{
 			error(1);
 		}
+		return root;
 
     }
 
 
     //对应编码2
-    void aProgramHead()
+    grammer_tree* aProgramHead()
     {
+		grammer_tree* root = newNode(2);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("program"))
 		{
 			rdToken();
-			aProgramName();
+			nowNode->child = newNode(encode("program"));
+			nowNode = nowNode->child;
+			nowNode->next = aProgramName();
+			nowNode = nowNode->next;;
 		}
 		else
 		{
 			error(2);
 		}
+		return root;
     }
 
     //对应编码3
-    void aProgramName() 
+    grammer_tree* aProgramName() 
     {
+		grammer_tree* root = newNode(3);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("ID"))
 		{
 			rdToken();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("ID"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("ID"));
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(3);
 		}
-
+		return root;
     }
 
     //对应编码4
-    void aDeclarePart() 
+    grammer_tree* aDeclarePart() 
     {
+		grammer_tree* root = newNode(4);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("type") || nowInput == encode("var") || nowInput == encode("procedure") || nowInput == encode("begin"))
 		{
-			aTypeDecPart();
-			aVarDecpart();
-			aProcDecPart();
+			if(root == nowNode)
+			{
+			nowNode->child = aTypeDecPart();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aTypeDecPart();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aVarDecpart();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aVarDecpart();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aProcDecPart();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aProcDecPart();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(4);
 		}
-
+		return root;
     }
 
     //对应编码5,文法5，6
-    void aTypeDecPart() 
+    grammer_tree* aTypeDecPart() 
     {
+		grammer_tree* root = newNode(5);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("var") || nowInput == encode("procedure") || nowInput == encode("begin"))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode("type"))
 		{
-			aTypeDec();
+			if(root == nowNode)
+			{
+			nowNode->child = aTypeDec();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aTypeDec();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(5);
 		}
+		return root;
     }
     
     //对应编码6,文法7
-    void aTypeDec()
+    grammer_tree* aTypeDec()
     {
+		grammer_tree* root = newNode(6);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("type"))
 		{
 			rdToken();
-			aTypeDecList();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("type"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("type"));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aTypeDecList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aTypeDecList();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(6);
 		}
+		return root;
     }
 
     //对应编码7,文法8
-    void aTypeDecList() 
+    grammer_tree* aTypeDecList() 
     {
+		grammer_tree* root = newNode(7);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("ID"))
 		{
-			aTypeId();
+			if(root == nowNode)
+			{
+			nowNode->child = aTypeId();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aTypeId();
+			nowNode = nowNode->next;
+			}
 			if(nowInput == encode("=") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode("="));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode("="));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode("="));
-				return;
+				return root;
 			}
-			aTypeDef();
+			if(root == nowNode)
+			{
+			nowNode->child = aTypeDef();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aTypeDef();
+			nowNode = nowNode->next;
+			}
 			if(nowInput == encode(";") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode(";"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode(";"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode(";"));
-				return;
+				return root;
 			}
-			aTypeDecMore();
+			if(root == nowNode)
+			{
+			nowNode->child = aTypeDecMore();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aTypeDecMore();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(7);
 		}
+		return root;
     }
     //对应编码8,文法9，10
-    void aTypeDecMore() 
+    grammer_tree* aTypeDecMore() 
     {
+		grammer_tree* root = newNode(8);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("var") || nowInput == encode("procedure") || nowInput == encode("begin"))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode("ID"))
 		{
-			aTypeDecList();
+			if(root == nowNode)
+			{
+			nowNode->child = aTypeDecList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aTypeDecList();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(8);
 		}
+		return root;
     }
     //对应编码9,文法11
-    void aTypeId()
+    grammer_tree* aTypeId()
     {
+		grammer_tree* root = newNode(9);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("ID"))
 		{
 			if(nowInput == encode("ID") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode("ID"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode("ID"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode("ID"));
-				return;
+				return root;
 			}
 		}
 		else
 		{
 			error(9);
 		}
+		return root;
     }
 
     //对应编码10,文法12，13，14
-    void aTypeDef()
+    grammer_tree* aTypeDef()
     {
+		grammer_tree* root = newNode(10);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("integer") || nowInput == encode("char"))
 		{
-			aBaseType();
+			if(root == nowNode)
+			{
+			nowNode->child = aBaseType();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aBaseType();
+			nowNode = nowNode->next;
+			}
 		}
 		else if(nowInput == encode("array") || nowInput == encode("record"))
 		{
-			aStructureType();
+			if(root == nowNode)
+			{
+			nowNode->child = aStructureType();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aStructureType();
+			nowNode = nowNode->next;
+			}
 		}
 		else if(nowInput == encode("ID"))
 		{
 			if(nowInput == encode("ID") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode("ID"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode("ID"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode("ID"));
-				return;
+				return root;
 			}
 		}
 		else
 		{
 			error(10);
 		}
+		return root;
     }
 
     //对应编码11,文法15，16
-    void aBaseType()
+    grammer_tree* aBaseType()
     {
+		grammer_tree* root = newNode(11);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("integer"))
 		{
 			if(nowInput == encode("integer") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode("integer"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode("integer"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode("integer"));
-				return;
+				return root;
 			}
+			
 		}
 		else if(nowInput == encode("char"))
 		{
 			if(nowInput == encode("char") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode("char"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode("char"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode("char"));
-				return;
+				return root;
 			}
 		}
 		else
 		{
 			error(11);
 		}
+		return root;
     }
 
     //对应编码12,文法17，18
-    void aStructureType()
+    grammer_tree* aStructureType()
     {
+		grammer_tree* root = newNode(12);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("array"))
 		{
-			aArrayType();
+			if(root == nowNode)
+			{
+			nowNode->child = aArrayType();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aArrayType();
+			nowNode = nowNode->next;
+			}
 		}
 		else if(nowInput == encode("record"))
 		{
-			aRecType();
+			if(root == nowNode)
+			{
+			nowNode->child = aRecType();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aRecType();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(12);
 		}
+		return root;
     }
 
     //对应编码13,文法19
-    void aArrayType()
+    grammer_tree* aArrayType()
     {
+		grammer_tree* root = newNode(13);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("array"))
 		{
 			if(nowInput == encode("array") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode("array"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode("array"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode("array"));
-				return;
+				return root;
 			}
 			if(nowInput == encode("[") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode("["));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode("["));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode("["));
-				return;
+				return root;
 			}
-			aLow();
+			if(root == nowNode)
+			{
+			nowNode->child = aLow();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aLow();
+			nowNode = nowNode->next;
+			}
 			if(nowInput == encode("..") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode(".."));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode(".."));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode(".."));
-				return;
+				return root;
 			}
-			aTop();
+			if(root == nowNode)
+			{
+			nowNode->child = aTop();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aTop();
+			nowNode = nowNode->next;
+			}
 			if(nowInput == encode("]") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode("]"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode("]"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode("]"));
-				return;
+				return root;
 			}
 			if(nowInput == encode("of") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode("of"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode("of"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode("of"));
-				return;
+				return root;
 			}
-			aBaseType();
+			if(root == nowNode)
+			{
+			nowNode->child = aBaseType();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aBaseType();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(13);
 		}
+		return root;
     }
 
     //对应编码14,文法20
-    void aLow()
+    grammer_tree* aLow()
     {
+		grammer_tree* root = newNode(14);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("INTC"))
 		{
 			if(nowInput == encode("INTC") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode("INTC"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode("INTC"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode("INTC"));
-				return;
+				return root;
 			}
+			
 		}
 		else
 		{
 			error(14);
 		}
+		return root;
     }
 
     //对应编码15,文法21
-    void aTop()
+    grammer_tree* aTop()
     {
+		grammer_tree* root = newNode(15);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("INTC"))
 		{
 			if(nowInput == encode("INTC") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode("INTC"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode("INTC"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode("INTC"));
-				return;
+				return root;
 			}
 		}
 		else
 		{
 			error(15);
 		}
+		return root;
     }
 
     //对应编码16,文法22
-    void aRecType()
+    grammer_tree* aRecType()
     {
+		grammer_tree* root = newNode(16);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("record"))
 		{
 			if(nowInput == encode("record") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode("record"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode("record"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode("record"));
-				return;
+				return root;
 			}
-			aFieldDecList();
+			if(root == nowNode)
+			{
+			nowNode->child = aFieldDecList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aFieldDecList();
+			nowNode = nowNode->next;
+			}
 			if(nowInput == encode("end") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode("end"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode("end"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode("end"));
-				return;
+				return root;
 			}
 		}
 		else
 		{
 			error(16);
 		}
+		return root;
     }
 
     //对应编码17,文法23，24
-    void aFieldDecList()
+    grammer_tree* aFieldDecList()
     {
+		grammer_tree* root = newNode(17);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("integer") || nowInput == encode("char"))
 		{
-			aBaseType();
-			aIdList();
+			if(root == nowNode)
+			{
+			nowNode->child = aBaseType();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aBaseType();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aIdList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aIdList();
+			nowNode = nowNode->next;
+			}
 			if(nowInput == encode(";") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode(";"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode(";"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode(";"));
-				return;
+				return root;
 			}
-			aFieldDecMore();
+			if(root == nowNode)
+			{
+			nowNode->child = aFieldDecMore();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aFieldDecMore();
+			nowNode = nowNode->next;
+			}
 		}
 		else if(nowInput == encode("array"))
 		{
-			aArrayType();
-			aIdList();
+			if(root == nowNode)
+			{
+			nowNode->child = aArrayType();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aArrayType();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aIdList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aIdList();
+			nowNode = nowNode->next;
+			}
 			if(nowInput == encode(";") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode(";"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode(";"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode(";"));
-				return;
+				return root;
 			}
-			aFieldDecMore();
+			if(root == nowNode)
+			{
+			nowNode->child = aFieldDecMore();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aFieldDecMore();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(17);
 		}
+		return root;
     }
 
     //对应编码18,文法25，26
-    void aFieldDecMore()
+    grammer_tree* aFieldDecMore()
     {
+		grammer_tree* root = newNode(18);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("end"))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode("integer") || nowInput == encode("char") || nowInput == encode("array"))
 		{
-			aFieldDecList();
+			if(root == nowNode)
+			{
+			nowNode->child = aFieldDecList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aFieldDecList();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(18);
 		}
+		return root;
     }
 
     //对应编码19,文法27
-    void aIdList()
+    grammer_tree* aIdList()
     {
+		grammer_tree* root = newNode(19);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("ID"))
 		{
 			if(nowInput == encode("ID") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode("ID"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode("ID"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode("ID"));
-				return;
+				return root;
 			}
-			aIdMore();
+			if(root == nowNode)
+			{
+			nowNode->child = aIdMore();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aIdMore();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(19);
 		}
+		return root;
     }
 
     //对应编码20,文法28，29
-    void aIdMore()
+    grammer_tree* aIdMore()
     {
+		grammer_tree* root = newNode(20);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode(";"))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode(","))
 		{
 			if(nowInput == encode(",") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode(","));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode(","));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode(","));
-				return;
+				return root;
 			}
-			aIdList();
+			if(root == nowNode)
+			{
+			nowNode->child = aIdList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aIdList();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(20);
 		}
+		return root;
     }
 
     //对应编码21,文法30，31
-    void aVarDecpart()
+    grammer_tree* aVarDecpart()
     {
+		grammer_tree* root = newNode(21);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("procedure") || nowInput == encode("begin"))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode("var"))
 		{
-			aVarDec();
+			if(root == nowNode)
+			{
+			nowNode->child = aVarDec();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aVarDec();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(21);
-			return;
+			return root;
 		}
+		return root;
     }
 
     //对应编码22,文法32
-    void aVarDec()
+    grammer_tree* aVarDec()
     {
+		grammer_tree* root = newNode(22);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("var"))
 		{
 			if(nowInput == encode("var") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode("var"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode("var"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode("var"));
-				return;
+				return root;
 			}
-			aVarDecList();
+			if(root == nowNode)
+			{
+			nowNode->child = aVarDecList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aVarDecList();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(22);
 		}
+		return root;
     }
 
     //对应编码23,文法33
-    void aVarDecList()
+    grammer_tree* aVarDecList()
     {
+		grammer_tree* root = newNode(23);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("integer") || nowInput == encode("char") || nowInput == encode("array") || nowInput == encode("record") || nowInput == encode("ID"))
 		{
-			aTypeDef();
-			aVarIdList();
+			if(root == nowNode)
+			{
+			nowNode->child = aTypeDef();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aTypeDef();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aVarIdList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aVarIdList();
+			nowNode = nowNode->next;
+			}
 			if(nowInput == encode(";") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode(";"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode(";"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode(";"));
-				return;
+				return root;
 			}
-			aVarDecMore();
+			if(root == nowNode)
+			{
+			nowNode->child = aVarDecMore();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aVarDecMore();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(23);
 		}
+		return root;
     }
 
     //对应编码24,文法34，35
-    void aVarDecMore()
+    grammer_tree* aVarDecMore()
     {
+		grammer_tree* root = newNode(24);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("procedure") || nowInput == encode("begin"))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode("integer") || nowInput == encode("char") || nowInput == encode("array") || nowInput == encode("record") || nowInput == encode("ID"))
 		{
-			aVarDecList();
+			if(root == nowNode)
+			{
+			nowNode->child = aVarDecList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aVarDecList();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(24);
 		}
+		return root;
     }
 
     //对应编码25,文法36
-    void aVarIdList()
+    grammer_tree* aVarIdList()
     {
+		grammer_tree* root = newNode(25);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("ID"))
 		{
 			if(nowInput == encode("ID") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode("ID"));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode("ID"));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode("ID"));
-				return;
+				return root;
 			}
-			aVarIdMore();
+			if(root == nowNode)
+			{
+			nowNode->child = aVarIdMore();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aVarIdMore();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(25);
 		}
+		return root;
     }
 
     //对应编码26,文法37，38
-    void aVarIdMore()
+    grammer_tree* aVarIdMore()
     {
+		grammer_tree* root = newNode(26);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode(";"))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode(","))
 		{
 			if(nowInput == encode(",") && flag == 1)
 			{
 				rdToken();
+				if(root == nowNode)
+				{
+				nowNode->child = newNode(encode(","));
+				nowNode = nowNode->child;
+				}
+				else
+				{
+				nowNode->next = newNode(encode(","));
+				nowNode = nowNode->next;
+				}
 			}
 			else
 			{
 				error(encode(","));
-				return;
+				return root;
 			}
-			aVarIdList();
+			if(root == nowNode)
+			{
+			nowNode->child = aVarIdList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aVarIdList();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(26);
 		}
+		return root;
     }
 
     //对应编码27,文法39，40
-    void aProcDecPart()
+    grammer_tree* aProcDecPart()
     {
+		grammer_tree* root = newNode(27);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("begin"))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode("procedure"))
 		{
-			aProcDec();
+			if(root == nowNode)
+			{
+			nowNode->child = aProcDec();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aProcDec();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(27);
 		}
+		return root;
     }
 
     //对应编码28,文法41
-    void aProcDec()
+    grammer_tree* aProcDec()
     {
+		grammer_tree* root = newNode(28);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("procedure"))
 		{
 			matchResult = matchAll("procedure");
 			if(matchResult == 0)
 			{
-				
-				return;
+				return root;
 			}
-			aProcName();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("procedure"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("procedure"));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aProcName();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aProcName();
+			nowNode = nowNode->next;
+			}
 			matchResult = matchAll("(");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aParamList();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("("));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("("));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aParamList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aParamList();
+			nowNode = nowNode->next;
+			}
 			matchResult = matchAll(")");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode(")"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode(")"));
+			nowNode = nowNode->next;
 			}
 			matchResult = matchAll(";");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aProcDecParts();
-			aProcBody();
-			aProcDecMore();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode(";"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode(";"));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aProcDecParts();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aProcDecParts();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aProcBody();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aProcBody();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aProcDecMore();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aProcDecMore();
+			nowNode = nowNode->next;
+			}
 
 		}
 		else
 		{
 			error(28);
 		}
+		return root;
     }
 
     //对应编码29,文法42，43
-    void aProcDecMore()
+    grammer_tree* aProcDecMore()
     {
+		grammer_tree* root = newNode(29);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("begin"))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode("procedure"))
 		{
-			aProcDec();
+			if(root == nowNode)
+			{
+			nowNode->child = aProcDec();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aProcDec();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(29);
 		}
+		return root;
     }
 
     //对应编码30,文法44
-    void aProcName()
+    grammer_tree* aProcName()
     {
+		grammer_tree* root = newNode(30);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("ID"))
 		{
@@ -1785,64 +2619,110 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("ID"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("ID"));
+			nowNode = nowNode->next;
 			}
 		}
 		else
 		{
 			error(30);
 		}
+		return root;
     }
 
     //对应编码31,文法45，46
-    void aParamList()
+    grammer_tree* aParamList()
     {
+		grammer_tree* root = newNode(31);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode(")"))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode("integer") || nowInput == encode("char") || nowInput == encode("array") || nowInput == encode("record") || nowInput == encode("ID") || nowInput == encode("var"))
 		{
-			aParamDecList();
+			if(root == nowNode)
+			{
+			nowNode->child = aParamDecList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aParamDecList();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(31);
 		}
+		return root;
     }
 
     //对应编码32,文法47
-    void aParamDecList()
+    grammer_tree* aParamDecList()
     {
+		grammer_tree* root = newNode(32);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("integer") || nowInput == encode("char") || nowInput == encode("array") || nowInput == encode("record") || nowInput == encode("ID") || nowInput == encode("var"))
 		{
-			aParam();
-			aParamMore();
+			if(root == nowNode)
+			{
+			nowNode->child = aParam();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aParam();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aParamMore();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aParamMore();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(32);
 		}
+		return root;
     }
 
     //对应编码33,文法48，49
-    void aParamMore()
+    grammer_tree* aParamMore()
     {
+		grammer_tree* root = newNode(33);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode(")"))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode(";"))
 		{
@@ -1850,27 +2730,67 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aParamDecList();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode(";"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode(";"));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aParamDecList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aParamDecList();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(33);
 		}
+		return root;
     }
 
     //对应编码34,文法50，51
-    void aParam()
+    grammer_tree* aParam()
     {
+		grammer_tree* root = newNode(34);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("integer") || nowInput == encode("char") || nowInput == encode("array") || nowInput == encode("record") || nowInput == encode("ID"))
 		{
-			aTypeDef();
-			aFormList();
+			if(root == nowNode)
+			{
+			nowNode->child = aTypeDef();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aTypeDef();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aFormList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aFormList();
+			nowNode = nowNode->next;
+			}
 		}
 		else if(nowInput == encode("var"))
 		{
@@ -1878,23 +2798,54 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aTypeDef();
-			aFormList();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("var"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("var"));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aTypeDef();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aTypeDef();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aFormList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aFormList();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(34);
 		}
+		return root;
     }
 
     //对应编码35,文法52
-    void aFormList()
+    grammer_tree* aFormList()
     {
+		grammer_tree* root = newNode(35);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("ID"))
 		{
@@ -1902,26 +2853,48 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aFidMore();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("ID"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("ID"));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aFidMore();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aFidMore();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(35);
 		}
+		return root;
     }
 
     //对应编码36,文法53，54
-    void aFidMore()
+    grammer_tree* aFidMore()
     {
+		grammer_tree* root = newNode(36);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode(";") || nowInput == encode(")"))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode(","))
 		{
@@ -1929,56 +2902,102 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aFormList();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode(","));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode(","));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aFormList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aFormList();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(36);
 		}
+		return root;
     }
 
     //对应编码37,文法55
-    void aProcDecParts()
+    grammer_tree* aProcDecParts()
     {
+		grammer_tree* root = newNode(37);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("type") || nowInput == encode("var") || nowInput == encode("procedure") || nowInput == encode("begin"))
 		{
-			aDeclarePart();
+			if(root == nowNode)
+			{
+			nowNode->child = aDeclarePart();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aDeclarePart();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(37);
 		}
+		return root;
     }
 
     //对应编码38,文法56
-    void aProcBody()
+    grammer_tree* aProcBody()
     {
+		grammer_tree* root = newNode(38);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("begin"))
 		{
-			aProgramBody();
+			if(root == nowNode)
+			{
+			nowNode->child = aProgramBody();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aProgramBody();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(38);
 		}
+		return root;
     }
 
     //对应编码39,文法57
-    void aProgramBody()
+    grammer_tree* aProgramBody()
     {
+		grammer_tree* root = newNode(39);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("begin"))
 		{
@@ -1986,50 +3005,103 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aStmList();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("begin"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("begin"));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aStmList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aStmList();
+			nowNode = nowNode->next;
+			}
 			matchResult = matchAll("end");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("end"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("end"));
+			nowNode = nowNode->next;
 			}
 		}
 		else
 		{
 			error(39);
 		}
+		return root;
     }
 
     //对应编码40,文法58
-    void aStmList()
+    grammer_tree* aStmList()
     {
+		grammer_tree* root = newNode(40);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("ID") || nowInput == encode("if") || nowInput == encode("while") || nowInput == encode("return") || nowInput == encode("read") || nowInput == encode("write"))
 		{
-			aStm();
-			aStmMore();
+			if(root == nowNode)
+			{
+			nowNode->child = aStm();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aStm();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aStmMore();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aStmMore();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(40);
 		}
+		return root;
     }
 
     //对应编码41,文法59，60
-    void aStmMore()
+    grammer_tree* aStmMore()
     {
+		grammer_tree* root = newNode(41);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("else") || nowInput == encode("fi") || nowInput == encode("end") || nowInput == encode("endwh"))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode(";"))
 		{
@@ -2037,42 +3109,109 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aStmList();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode(";"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode(";"));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aStmList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aStmList();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(41);
 		}
+		return root;
     }
 
     //对应编码42,文法61，62，63，64，65，66
-    void aStm()
+    grammer_tree* aStm()
     {
+		grammer_tree* root = newNode(42);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("if"))
 		{
-			aConditionalStm();
+			if(root == nowNode)
+			{
+			nowNode->child = aConditionalStm();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aConditionalStm();
+			nowNode = nowNode->next;
+			}
 		}
 		else if(nowInput == encode("while"))
 		{
-			aLoopStm();
+			if(root == nowNode)
+			{
+			nowNode->child = aLoopStm();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aLoopStm();
+			nowNode = nowNode->next;
+			}
 		}
 		else if(nowInput == encode("read"))
 		{
-			aInputStm();
+			if(root == nowNode)
+			{
+			nowNode->child = aInputStm();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aInputStm();
+			nowNode = nowNode->next;
+			}
 		}
 		else if(nowInput == encode("write"))
 		{
-			aOutputStm();
+			if(root == nowNode)
+			{
+			nowNode->child = aOutputStm();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aOutputStm();
+			nowNode = nowNode->next;
+			}
 		}
 		else if(nowInput == encode("return"))
 		{
-			aReturnStm();
+			if(root == nowNode)
+			{
+			nowNode->child = aReturnStm();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aReturnStm();
+			nowNode = nowNode->next;
+			}
 		}
 		else if(nowInput == encode("ID"))
 		{
@@ -2080,68 +3219,142 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aAssCall();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("ID"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("ID"));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aAssCall();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aAssCall();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(42);
 		}
+		return root;
     }
 
     //对应编码43,文法67，68
-    void aAssCall()
+    grammer_tree* aAssCall()
     {
+		grammer_tree* root = newNode(43);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode(":="))
 		{
-			aAssignmentRest();
+			if(root == nowNode)
+			{
+			nowNode->child = aAssignmentRest();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aAssignmentRest();
+			nowNode = nowNode->next;
+			}
 		}
 		else if(nowInput == encode("("))
 		{
-			aCallStmRest();
+			if(root == nowNode)
+			{
+			nowNode->child = aCallStmRest();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aCallStmRest();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(43);
 		}
+		return root;
     }
 
     //对应编码44,文法69
-    void aAssignmentRest()
+    grammer_tree* aAssignmentRest()
     {
+		grammer_tree* root = newNode(44);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("[") || nowInput == encode(".") || nowInput == encode(":="))
 		{
-			aVariMore();
+			if(root == nowNode)
+			{
+			nowNode->child = aVariMore();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aVariMore();
+			nowNode = nowNode->next;
+			}
 			matchResult = matchAll(":=");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aExp();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode(":="));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode(":="));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aExp();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aExp();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(44);
-			return;
+			return root;
 		}
+		return root;
     }
 
     //对应编码45,文法70
-    void aConditionalStm()
+    grammer_tree* aConditionalStm()
     {
+		grammer_tree* root = newNode(45);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("if"))
 		{
@@ -2149,43 +3362,113 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aRelExp();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("if"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("if"));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aRelExp();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aRelExp();
+			nowNode = nowNode->next;
+			}
 			matchResult = matchAll("then");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aStmList();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("then"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("then"));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aStmList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aStmList();
+			nowNode = nowNode->next;
+			}
 			matchResult = matchAll("else");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aStmList();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("else"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("else"));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aStmList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aStmList();
+			nowNode = nowNode->next;
+			}
 			matchResult = matchAll("fi");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("fi"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("fi"));
+			nowNode = nowNode->next;
 			}
 		}
 		else
 		{
 			error(45);
-			return;
+			return root;
 		}
+		return root;
     }
 
     //对应编码46,文法71
-    void aLoopStm()
+    grammer_tree* aLoopStm()
     {
+		grammer_tree* root = newNode(46);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("while"))
 		{
@@ -2193,35 +3476,86 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aRelExp();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("while"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("while"));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aRelExp();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aRelExp();
+			nowNode = nowNode->next;
+			}
 			matchResult = matchAll("do");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aStmList();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("do"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("do"));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aStmList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aStmList();
+			nowNode = nowNode->next;
+			}
 			matchResult = matchAll("endwh");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("endwh"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("endwh"));
+			nowNode = nowNode->next;
 			}
 		}
 		else
 		{
 			error(46);
 		}
+		return root;
     }
 
     //对应编码47,文法72
-    void aInputStm()
+    grammer_tree* aInputStm()
     {
+		grammer_tree* root = newNode(47);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("read"))
 		{
@@ -2229,34 +3563,76 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("read"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("read"));
+			nowNode = nowNode->next;
 			}
 			matchResult = matchAll("(");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aInvar();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("("));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("("));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aInvar();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aInvar();
+			nowNode = nowNode->next;
+			}
 			matchResult = matchAll(")");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode(")"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode(")"));
+			nowNode = nowNode->next;
 			}
 		}
 		else
 		{
 			error(47);
 		}
+		return root;
     }
 
     //对应编码48,文法73
-    void aInvar()
+    grammer_tree* aInvar()
     {
+		grammer_tree* root = newNode(48);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("ID"))
 		{
@@ -2264,21 +3640,34 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("ID"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("ID"));
+			nowNode = nowNode->next;
 			}
 		}
 		else
 		{
 			error(48);
 		}
+		return root;
     }
 
     //对应编码49,文法74
-    void aOutputStm()
+    grammer_tree* aOutputStm()
     {
+		grammer_tree* root = newNode(49);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("write"))
 		{
@@ -2286,34 +3675,76 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("write"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("write"));
+			nowNode = nowNode->next;
 			}
 			matchResult = matchAll("(");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aExp();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("("));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("("));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aExp();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aExp();
+			nowNode = nowNode->next;
+			}
 			matchResult = matchAll(")");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode(")"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode(")"));
+			nowNode = nowNode->next;
 			}
 		}
 		else
 		{
 			error(49);
 		}
+		return root;
     }
 
     //对应编码50,文法75
-    void aReturnStm()
+    grammer_tree* aReturnStm()
     {
+		grammer_tree* root = newNode(50);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("return"))
 		{
@@ -2321,34 +3752,76 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("return"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("return"));
+			nowNode = nowNode->next;
 			}
 			matchResult = matchAll("(");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aExp();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("("));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("("));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aExp();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aExp();
+			nowNode = nowNode->next;
+			}
 			matchResult = matchAll(")");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode(")"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode(")"));
+			nowNode = nowNode->next;
 			}
 		}
 		else
 		{
 			error(50);
 		}
+		return root;
     }
 
     //对应编码51,文法76
-    void aCallStmRest()
+    grammer_tree* aCallStmRest()
     {
+		grammer_tree* root = newNode(51);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("("))
 		{
@@ -2356,54 +3829,107 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aActParamList();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("("));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("("));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aActParamList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aActParamList();
+			nowNode = nowNode->next;
+			}
 			matchResult = matchAll(")");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode(")"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode(")"));
+			nowNode = nowNode->next;
 			}
 		}
 		else
 		{
 			error(51);
 		}
+		return root;
     }
 
     //对应编码52,文法77，78
-    void aActParamList()
+    grammer_tree* aActParamList()
     {
+		grammer_tree* root = newNode(52);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode(")"))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode("(") || nowInput == encode("INTC") || nowInput == encode("ID"))
 		{
-			aExp();
-			aActParamMore();
+			if(root == nowNode)
+			{
+			nowNode->child = aExp();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aExp();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aActParamMore();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aActParamMore();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(52);
 		}
+		return root;
     }
 
     //对应编码53,文法79,80
-    void aActParamMore()
+    grammer_tree* aActParamMore()
     {
+		grammer_tree* root = newNode(53);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode(")"))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode(","))
 		{
@@ -2411,143 +3937,291 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aActParamList();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode(","));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode(","));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aActParamList();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aActParamList();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(53);
 		}
+		return root;
     }
 
     //对应编码54,文法81
-    void aRelExp()
+    grammer_tree* aRelExp()
     {
+		grammer_tree* root = newNode(54);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("(") || nowInput == encode("INTC") || nowInput == encode("ID"))
 		{
-			aExp();
-			aOtherRelE();
+			if(root == nowNode)
+			{
+			nowNode->child = aExp();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aExp();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aOtherRelE();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aOtherRelE();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(54);
 		}
+		return root;
     }
 
     //对应编码55,文法82
-    void aOtherRelE()
+    grammer_tree* aOtherRelE()
     {
+		grammer_tree* root = newNode(55);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("<") || nowInput == encode("="))
 		{
-			aCmpOp();
-			aExp();
+			if(root == nowNode)
+			{
+			nowNode->child = aCmpOp();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aCmpOp();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aExp();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aExp();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(55);
 		}
+		return root;
     }
 
     //对应编码56,文法83
-    void aExp()
+    grammer_tree* aExp()
     {
+		grammer_tree* root = newNode(56);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("(") || nowInput == encode("INTC") || nowInput == encode("ID"))
 		{
-			aTerm();
-			aOtherTerm();
+			if(root == nowNode)
+			{
+			nowNode->child = aTerm();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aTerm();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aOtherTerm();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aOtherTerm();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(56);
 		}
+		return root;
     }
 
     //对应编码57,文法84，85
-    void aOtherTerm()
+    grammer_tree* aOtherTerm()
     {
+		grammer_tree* root = newNode(57);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("<") || nowInput == encode("=")|| nowInput == encode("]") || nowInput == encode("then")
 		|| nowInput == encode("else") || nowInput == encode("fi") || nowInput == encode("do") || nowInput == encode("endwh")
 		|| nowInput == encode(")") || nowInput == encode("end") || nowInput == encode(";") || nowInput == encode(","))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode("+") || nowInput == encode("-"))
 		{
-			aAddOp();
-			aExp();
+			if(root == nowNode)
+			{
+			nowNode->child = aAddOp();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aAddOp();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aExp();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aExp();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(57);
 		}
+		return root;
     }
 
     //对应编码58,文法86
-    void aTerm()
+    grammer_tree* aTerm()
     {
+		grammer_tree* root = newNode(58);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("(") || nowInput == encode("INTC") || nowInput == encode("ID"))
 		{
-			aFactor();
-			aOtherFactor();
+			if(root == nowNode)
+			{
+			nowNode->child = aFactor();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aFactor();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aOtherFactor();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aOtherFactor();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(58);
 		}
+		return root;
     }
 
     //对应编码59,文法87，88
-    void aOtherFactor()
+    grammer_tree* aOtherFactor()
     {
+		grammer_tree* root = newNode(59);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("+") || nowInput == encode("-") || nowInput == encode("<") || nowInput == encode("=")
 		|| nowInput == encode("]") || nowInput == encode("then") || nowInput == encode("else") || nowInput == encode("fi")
 		|| nowInput == encode("do") || nowInput == encode("endwh") || nowInput == encode(")") || nowInput == encode(";")
 		|| nowInput == encode(",") || nowInput == encode("end"))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode("*") || nowInput == encode("/"))
 		{
-			aMultOp();
-			aTerm();
+			if(root == nowNode)
+			{
+			nowNode->child = aMultOp();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aMultOp();
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aTerm();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aTerm();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(59);
 		}
+		return root;
     }
 
     //对应编码60,文法89，90，91
-    void aFactor()
+    grammer_tree* aFactor()
     {
+		grammer_tree* root = newNode(60);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("("))
 		{
@@ -2555,14 +4229,43 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aExp();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("("));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("("));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aExp();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aExp();
+			nowNode = nowNode->next;
+			}
 			matchResult = matchAll(")");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode(")"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode(")"));
+			nowNode = nowNode->next;
 			}
 		}
 		else if(nowInput == encode("INTC"))
@@ -2571,25 +4274,47 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("INTC"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("INTC"));
+			nowNode = nowNode->next;
 			}
 		}
 		else if(nowInput == encode("ID"))
 		{
-			aVariable();
+			if(root == nowNode)
+			{
+			nowNode->child = aVariable();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aVariable();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(60);
 		}
+		return root;
     }
 
     //对应编码61,文法92
-    void aVariable()
+    grammer_tree* aVariable()
     {
+		grammer_tree* root = newNode(61);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("ID"))
 		{
@@ -2597,29 +4322,51 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aVariMore();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("ID"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("ID"));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aVariMore();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aVariMore();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(61);
 		}
+		return root;
     }
 
     //对应编码62,文法93，94，95
-    void aVariMore()
+    grammer_tree* aVariMore()
     {
+		grammer_tree* root = newNode(62);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode(":=") || nowInput == encode("*") || nowInput == encode("/") || nowInput == encode("+")
 		|| nowInput == encode("-") || nowInput == encode("<") || nowInput == encode("=") || nowInput == encode("then")
 		|| nowInput == encode("else") || nowInput == encode("fi") || nowInput == encode("do") || nowInput == encode("endwh")
 		|| nowInput == encode(")") || nowInput == encode("end") || nowInput == encode(";") || nowInput == encode(","))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode("["))
 		{
@@ -2627,14 +4374,43 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aExp();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("["));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("["));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aExp();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aExp();
+			nowNode = nowNode->next;
+			}
 			matchResult = matchAll("]");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("]"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("]"));
+			nowNode = nowNode->next;
 			}
 		}
 		else if(nowInput == encode("."))
@@ -2643,22 +4419,44 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aFieldVar();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("."));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("."));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aFieldVar();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aFieldVar();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(62);
 		}
+		return root;
     }
 
     //对应编码63,文法96
-    void aFieldVar()
+    grammer_tree* aFieldVar()
     {
+		grammer_tree* root = newNode(63);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("ID"))
 		{
@@ -2666,29 +4464,51 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aFieldVarMore();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("ID"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("ID"));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aFieldVarMore();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aFieldVarMore();
+			nowNode = nowNode->next;
+			}
 		}
 		else
 		{
 			error(63);
 		}
+		return root;
     }
 
     //对应编码64,文法97，98
-    void aFieldVarMore()
+    grammer_tree* aFieldVarMore()
     {
+		grammer_tree* root = newNode(64);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode(":=") || nowInput == encode("*") || nowInput == encode("/") || nowInput == encode("+")
 		|| nowInput == encode("-") || nowInput == encode("<") || nowInput == encode("=") || nowInput == encode("then")
 		|| nowInput == encode("else") || nowInput == encode("fi") || nowInput == encode("do") || nowInput == encode("endwh")
 		|| nowInput == encode(")") || nowInput == encode("end") || nowInput == encode(";") || nowInput == encode(","))
 		{
-			return;
+			return root;
 		}
 		else if(nowInput == encode("["))
 		{
@@ -2696,28 +4516,60 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
 			}
-			aExp();
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("["));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("["));
+			nowNode = nowNode->next;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = aExp();
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = aExp();
+			nowNode = nowNode->next;
+			}
 			matchResult = matchAll("]");
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("]"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("]"));
+			nowNode = nowNode->next;
 			}
 		}
 		else
 		{
 			error(64);
 		}
+		return root;
     }
 
     //对应编码65,文法99,100
-    void aCmpOp()
+    grammer_tree* aCmpOp()
     {
+		grammer_tree* root = newNode(65);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("<"))
 		{
@@ -2725,7 +4577,17 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("<"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("<"));
+			nowNode = nowNode->next;
 			}
 		}
 		else if(nowInput == encode("="))
@@ -2734,21 +4596,34 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("="));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("="));
+			nowNode = nowNode->next;
 			}
 		}
 		else
 		{
 			error(65);
 		}
+		return root;
     }
 
     //对应编码66,文法101，102
-    void aAddOp()
+    grammer_tree* aAddOp()
     {
+		grammer_tree* root = newNode(66);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("+"))
 		{
@@ -2756,7 +4631,17 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("+"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("+"));
+			nowNode = nowNode->next;
 			}
 		}
 		else if(nowInput == encode("-"))
@@ -2765,21 +4650,34 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("-"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("-"));
+			nowNode = nowNode->next;
 			}
 		}
 		else
 		{
 			error(66);
 		}
+		return root;
     }
 
     //对应编码67,文法103，104
-    void aMultOp()
+    grammer_tree* aMultOp()
     {
+		grammer_tree* root = newNode(67);
+		grammer_tree* nowNode = root;
 		if(flag == 0)
 		{
-			return;
+			return root;
 		}
 		if(nowInput == encode("*"))
 		{
@@ -2787,7 +4685,17 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("*"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("*"));
+			nowNode = nowNode->next;
 			}
 		}
 		else if(nowInput == encode("/"))
@@ -2796,19 +4704,35 @@ public:
 			if(matchResult == 0)
 			{
 				
-				return;
+				return root;
+			}
+			if(root == nowNode)
+			{
+			nowNode->child = newNode(encode("/"));
+			nowNode = nowNode->child;
+			}
+			else
+			{
+			nowNode->next = newNode(encode("/"));
+			nowNode = nowNode->next;
 			}
 		}
 		else
 		{
 			error(67);
 		}
+		return root;
     }
 	void analysis()
 	{
 		rdToken();
-		aProgram();
+		roots = aProgram();
+		if(errorFlag == 0)
+		{
+			print_tree(roots,0);
+		}
 		printf("grammer_analysis_complete!");
+		
 	}
     /***************子程序*****************/
 	bool isOver(){
@@ -2825,6 +4749,7 @@ private:
 	int matchResult;
 	int errorFlag = 0;
 	string nowValue;
+	grammer_tree* roots = NULL;
 
 };
 
