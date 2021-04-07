@@ -1054,6 +1054,7 @@ public:
 			}
 		}
 		printf("\n");
+		printf("%d\n",code);
 		rdToken();
 	}
     //对应编码1
@@ -3258,7 +3259,7 @@ public:
 		{
 			return root;
 		}
-		if(nowInput == encode(":="))
+		if(nowInput == encode(":=") || nowInput == encode("[") || nowInput == encode("."))
 		{
 			if(root == nowNode)
 			{
@@ -4364,7 +4365,8 @@ public:
 		if(nowInput == encode(":=") || nowInput == encode("*") || nowInput == encode("/") || nowInput == encode("+")
 		|| nowInput == encode("-") || nowInput == encode("<") || nowInput == encode("=") || nowInput == encode("then")
 		|| nowInput == encode("else") || nowInput == encode("fi") || nowInput == encode("do") || nowInput == encode("endwh")
-		|| nowInput == encode(")") || nowInput == encode("end") || nowInput == encode(";") || nowInput == encode(","))
+		|| nowInput == encode(")") || nowInput == encode("end") || nowInput == encode(";") || nowInput == encode(",")
+		|| nowInput == encode("]"))
 		{
 			return root;
 		}
